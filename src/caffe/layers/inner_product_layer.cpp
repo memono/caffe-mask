@@ -54,7 +54,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     if (mask_term_) {
       this->blobs_[bias_term_?2:1].reset(new Blob<Dtype>(weight_shape));
       shared_ptr<Filler<Dtype> > mask_filler(GetFiller<Dtype>(
-          this->layer_param_.inner_product_param().mask_term_filler()));
+          this->layer_param_.inner_product_param().mask_filler()));
       mask_filler->Fill(this->blobs_[bias_term_?2:1].get());
     }
   }  // parameter initialization
@@ -130,7 +130,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   }
   if (this->param_propagate_down_[0]&&mask_term_) {
       // Apply the mask to diff
-      const Dtype* weights_diff = this->blobs_[0]->mutable_cpu_diff();
+      Dtype* const weights_diff = this->blobs_[0]->mutable_cpu_diff();
       const Dtype* const mask = this->blobs_[bias_term_?2:1]->cpu_data();
       const int count = this->blobs_[0]->count();
       for (int i = 0; i < count; ++i) {
