@@ -49,6 +49,18 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         top_diff, this->blobs_[0]->gpu_data(), (Dtype)0.,
         bottom[0]->mutable_gpu_diff());
   }
+  if (this->param_propagate_down_[0]&&mask_term_) {
+      // Apply the mask to diff
+      const Dtype* weights_diff = this->blobs_[0]->mutable_cpu_diff();
+      const Dtype* const mask = this->blobs_[bias_term_?2:1]->cpu_data();
+      const int count = this->blobs_[0]->count();
+      CUDA_KERNEL_LOOP(index, count) {
+        weights_diff[index] = weights_diff[index] * mask[index];
+      }
+      //for (int i = 0; i < count; ++i) {
+      //  weights_diff[i] = weights_diff[i] * mask[i];
+      //}
+  }
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(InnerProductLayer);
