@@ -3,6 +3,8 @@
 Caffe is a deep learning framework made with expression, speed, and modularity in mind.
 It is developed by the Berkeley Vision and Learning Center ([BVLC](http://bvlc.eecs.berkeley.edu)) and community contributors.
 
+THIS VERSION IS MODIFIED FOR ADDING MASK IN THE BACKWARD OPERATION.
+
 Check out the [project site](http://caffe.berkeleyvision.org) for all the details like
 
 - [DIY Deep Learning for Vision with Caffe](https://docs.google.com/presentation/d/1UeKXVgRvvxg9OUdh_UiC5G71UMscNPlvArsWER41PsU/edit#slide=id.p)
