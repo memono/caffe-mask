@@ -1,0 +1,15 @@
+net: "./models/bvlc_alexnet/train_val_prune.prototxt"
+test_iter: 1000
+test_interval: 1000
+# Retraining a pruned network usually doesn't require a huge LR.
+base_lr: 0.0001
+lr_policy: "step"
+gamma: 0.1
+stepsize: 100000
+display: 20
+max_iter: 450000
+momentum: 0.9
+weight_decay: 0.0005
+snapshot: 10000
+snapshot_prefix: "./caffe_alexnet_train_prune"
+solver_mode: GPU
