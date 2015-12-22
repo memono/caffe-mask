@@ -25,6 +25,14 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
+__global__ void ApplyMask(const int n, const Dtype* in_diff,
+    const Dtype* mask, Dtype* out_diff) {
+  CUDA_KERNEL_LOOP(index, n) {
+    out_diff[index] = in_diff[index] * mask[index];
+  }
+}
+
+template <typename Dtype>
 void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
@@ -51,12 +59,13 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   }
   if (this->param_propagate_down_[0]&&mask_term_) {
       // Apply the mask to diff
-      Dtype* const weights_diff = this->blobs_[0]->mutable_cpu_diff();
-      const Dtype* const mask = this->blobs_[bias_term_?2:1]->cpu_data();
+      Dtype* weights_diff = this->blobs_[0]->mutable_gpu_diff();
+      const Dtype* mask = this->blobs_[bias_term_?2:1]->gpu_data();
       const int count = this->blobs_[0]->count();
-      CUDA_KERNEL_LOOP(index, count) {
-        weights_diff[index] = weights_diff[index] * mask[index];
-      }
+      ApplyMask<Dtype><<<CAFFE_GET_BLOCKS(count),
+        CAFFE_CUDA_NUM_THREADS>>>(
+          count, weights_diff, mask, weights_diff);
+      CUDA_POST_KERNEL_CHECK;
       //for (int i = 0; i < count; ++i) {
       //  weights_diff[i] = weights_diff[i] * mask[i];
       //}
