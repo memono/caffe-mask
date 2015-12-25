@@ -2,16 +2,15 @@
 # one using CMake, and one using make.
 env:
   matrix:
+    - WITH_CUDA=false WITH_CMAKE=false
     - WITH_CUDA=false WITH_CMAKE=true
+    - WITH_CUDA=true WITH_CMAKE=false
     - WITH_CUDA=true WITH_CMAKE=true
 
 language: cpp
 
 # Cache Ubuntu apt packages.
-cache:
-  apt: true
-  directories:
-    - /home/travis/miniconda
+cache: apt
 
 compiler: gcc
 
@@ -36,7 +35,7 @@ notifications:
 # your Caffe fork.  To configure your git email address, use:
 #     git config --global user.email me@example.com
   email:
-    on_success: change
+    on_success: always
     on_failure: always
 
 # IRC notifications disabled by default.
