@@ -96,7 +96,7 @@ message NetParameter {
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
 //
-// SolverParameter next available ID: 37 (last added: iter_size)
+// SolverParameter next available ID: 38 (last added: richness)
 message SolverParameter {
   //////////////////////////////////////////////////////////////////////////////
   // Specifying the train and test networks
@@ -180,7 +180,7 @@ message SolverParameter {
   }
   optional SolverMode solver_mode = 17 [default = GPU];
   // the device_id will that be used in GPU mode. Use device_id = 0 in default.
-  optional int32 device_id = 18 [default = 0];
+  repeated int32 device_id = 18 ;
   // If non-negative, the seed with which the Solver will initialize the Caffe
   // random number generator -- useful for reproducible results. Otherwise,
   // (and by default) initialize using a seed derived from the system clock.
@@ -202,6 +202,10 @@ message SolverParameter {
 
   // If false, don't save a snapshot after training finishes.
   optional bool snapshot_after_train = 28 [default = true];
+
+  // Total memory allowed to be used for workspaces in cudnn's convolution, in MBs. default is 300MB.
+  // The framework will try to find the fastest setup given this limit.
+  optional int32 richness = 37 [default = 300];
 }
 
 // A message that stores the solver snapshots
@@ -290,7 +294,7 @@ message LayerParameter {
 
   // The blobs containing the numeric parameters of the layer.
   repeated BlobProto blobs = 7;
-  
+
   // Specifies on which bottoms the backpropagation should be skipped.
   // The size must be either 0 or equal to the number of bottoms.
   repeated bool propagate_down = 11;
@@ -318,6 +322,7 @@ message LayerParameter {
   // The default for the engine is set by the ENGINE switch at compile-time.
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
+  optional BNParameter bn_param = 137;
   optional ConcatParameter concat_param = 104;
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
@@ -351,6 +356,7 @@ message LayerParameter {
   optional TanHParameter tanh_param = 127;
   optional ThresholdParameter threshold_param = 128;
   optional WindowDataParameter window_data_param = 129;
+  optional VideoDataParameter video_data_param = 140;
 }
 
 // Message that stores parameters used to apply transformation
@@ -374,6 +380,24 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
+
+  //if set to true,
+  //instead using a fixed position cropping (center, left-up, left-down, right-up, right-down)
+  optional bool fix_crop = 10 [default = false];
+  //turn on to use stronger augmentation
+  optional bool more_fix_crop = 15 [default = false];
+
+  //if set to true, use multi-scale data augmentation
+  optional bool multi_scale = 11 [default = false];
+
+  // a list of float numbers less than 1 for multiple scales
+  repeated float scale_ratios = 12;
+
+  // maximal tolerated aspect ratio mismatch in the ratio list
+  optional int32 max_distort = 13 [default = 1];
+
+  //if set to true, it is optical flow field
+  optional bool is_flow = 14 [default = false];
 }
 
 // Message that stores parameters shared by loss layers
@@ -411,6 +435,23 @@ message ArgMaxParameter {
   optional uint32 top_k = 2 [default = 1];
 }
 
+message BNParameter {
+  optional FillerParameter slope_filler = 1;
+  optional FillerParameter bias_filler = 2;
+  optional float momentum = 3 [default = 0.9];
+  optional float eps = 4 [default = 1e-5];
+  // If true, will use the moving average mean and std for training and test.
+  // Will override the lr_param and freeze all the parameters.
+  // Make sure to initialize the layer properly with pretrained parameters.
+  optional bool frozen = 5 [default = false];
+  enum Engine {
+    DEFAULT = 0;
+    CAFFE = 1;
+    CUDNN = 2;
+  }
+  optional Engine engine = 6 [default = DEFAULT];
+}
+
 message ConcatParameter {
   // The axis along which to concatenate -- may be negative to index from the
   // end (e.g., -1 for the last axis).  Other axes must have the
@@ -431,7 +472,7 @@ message ContrastiveLossParameter {
   // Hadsell paper. New models should probably use this version.
   // legacy_version = true uses (margin - d^2). This is kept to support /
   // reproduce existing models and results
-  optional bool legacy_version = 2 [default = false]; 
+  optional bool legacy_version = 2 [default = false];
 }
 
 message ConvolutionParameter {
@@ -487,6 +528,8 @@ message DataParameter {
   optional bool mirror = 6 [default = false];
   // Force the encoded image to have 3 color channels
   optional bool force_encoded_color = 9 [default = false];
+  // Enable within-shared shuffling
+  optional bool shuffle = 10 [default = false];
 }
 
 message DropoutParameter {
@@ -606,6 +649,40 @@ message ImageDataParameter {
   optional string root_folder = 12 [default = ""];
 }
 
+message VideoDataParameter{
+  // Specify the data source.
+  optional string source = 1;
+  // Specify the batch size.
+  optional uint32 batch_size = 4;
+  // The rand_skip variable is for the data layer to skip a few data points
+  // to avoid all asynchronous sgd clients to start at the same point. The skip
+  // point would be set as rand_skip * rand(0,1). Note that rand_skip should not
+  // be larger than the number of keys in the leveldb.
+  optional uint32 rand_skip = 7 [default = 0];
+  // Whether or not ImageLayer should shuffle the list of files at every epoch.
+  optional bool shuffle = 8 [default = false];
+  // It will also resize images if new_height or new_width are not zero.
+  optional uint32 new_height = 9 [default = 0];
+  optional uint32 new_width = 10 [default = 0];
+  optional uint32 new_length = 11 [default = 1];
+  optional uint32 num_segments = 12 [default = 1];
+  // DEPRECATED. See TransformationParameter. For data pre-processing, we can do
+  // simple scaling and subtracting the data mean, if provided. Note that the
+  // mean subtraction is always carried out before scaling.
+  optional float scale = 2 [default = 1];
+  optional string mean_file = 3;
+  // DEPRECATED. See TransformationParameter. Specify if we would like to randomly
+  // crop an image.
+  optional uint32 crop_size = 5 [default = 0];
+  // DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
+  // data.
+  optional bool mirror = 6 [default = false];
+  enum Modality {
+    RGB = 0;
+    FLOW = 1;
+  }
+  optional Modality modality = 13 [default = FLOW];
+}
 message InfogainLossParameter {
   // Specify the infogain matrix source.
   optional string source = 1;
@@ -705,6 +782,9 @@ message PowerParameter {
 message PythonParameter {
   optional string module = 1;
   optional string layer = 2;
+
+  //param_str to be sent to the python layer
+  optional string param_str = 3;
 }
 
 // Message that stores parameters used by ReductionLayer
@@ -896,6 +976,7 @@ message WindowDataParameter {
   // append root_folder to locate images
   optional string root_folder = 13 [default = ""];
 }
+
 
 message SPPParameter {
   enum PoolMethod {
