@@ -29,6 +29,7 @@ __global__ void ApplyMask(const int n, const Dtype* in_diff,
     const Dtype* mask, Dtype* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
     out_diff[index] = in_diff[index] * mask[index];
+    //out_diff[index] = mask[index]?in_diff[index]:(Dtype)0;
   }
 }
 
