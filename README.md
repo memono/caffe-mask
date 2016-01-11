@@ -4,6 +4,7 @@ Caffe is a deep learning framework made with expression, speed, and modularity i
 It is developed by the Berkeley Vision and Learning Center ([BVLC](http://bvlc.eecs.berkeley.edu)) and community contributors.
 
 THIS VERSION IS MODIFIED FOR ADDING MASK IN THE BACKWARD OPERATION.
+This branch realize the feature by creating a subclass of Blob--MaskedBlob. This subclass override Blob::Update and thereby apply a mask when updating.
 
 Check out the [project site](http://caffe.berkeleyvision.org) for all the details like
 
